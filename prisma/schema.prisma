@@ -1,0 +1,234 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// Enums baseados nos tipos do frontend (active/inactive, etc)
+enum Status {
+  active
+  inactive
+}
+
+enum AppointmentStatus {
+  scheduled
+  confirmed
+  completed
+  cancelled
+}
+
+enum TransactionType {
+  receivable
+  payable
+}
+
+enum TransactionStatus {
+  pending
+  paid
+  overdue
+  cancelled
+}
+
+enum MovementType {
+  income
+  expense
+  credit
+  debit
+}
+
+enum PaymentMethod {
+  cash
+  credit
+  debit
+  pix
+  transfer
+}
+
+enum UserRole {
+  admin
+  manager
+  receptionist
+  doctor
+  financial
+}
+
+// --- Tabelas ---
+
+model Clinic {
+  id          String   @id @default(uuid())
+  name        String
+  cnpj        String?   @unique
+  phone       String?
+  address     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users User[]
+  doctors Doctor[]
+  patients Patient[]
+  services Service[]
+  appointments Appointment[]
+  transactions Transaction[]
+  accounts BankAccount[]
+  cashMovements CashMovement[]
+}
+
+model User {
+  id          String   @id @default(uuid())
+  name        String
+  email       String   @unique
+  password    String // Adicionado para autenticação futura
+  role        UserRole
+  status      Status   @default(active)
+  permissions String? // Armazenaremos como JSON string ou separado se preferir
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  clinicId String
+  clinic Clinic @relation(fields: [clinicId], references: [id])
+}
+
+model Doctor {
+  id        String   @id @default(uuid())
+  name      String
+  specialty String
+  crm       String   @unique
+  phone     String
+  email     String   @unique
+  status    Status   @default(active)
+  createdAt DateTime @default(now())
+
+  // Relacionamentos
+  appointments Appointment[]
+
+  clinicId String
+  clinic Clinic @relation(fields: [clinicId], references: [id])
+}
+
+model Patient {
+  id              String   @id @default(uuid())
+  name            String
+  cpf             String   @unique
+  birthDate       DateTime
+  phone           String
+  email           String
+  address         String
+  healthInsurance String?
+  createdAt       DateTime @default(now())
+
+  // Relacionamentos
+  appointments Appointment[]
+
+  clinicId String
+  clinic Clinic @relation(fields: [clinicId], references: [id])
+}
+
+model Service {
+  id          String  @id @default(uuid())
+  name        String
+  description String  @db.Text
+  price       Decimal @db.Decimal(10, 2)
+  duration    Int // em minutos
+  category    String
+  status      Status  @default(active)
+
+  // Relacionamentos
+  appointments Appointment[]
+
+  clinicId String
+  clinic Clinic @relation(fields: [clinicId], references: [id])
+}
+
+model Appointment {
+  id     String            @id @default(uuid())
+  date   DateTime
+  time   String // Mantive string ('09:00') para igualar seu frontend
+  status AppointmentStatus @default(scheduled)
+  notes  String?           @db.Text
+  price  Decimal           @db.Decimal(10, 2)
+
+  // Chaves Estrangeiras
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id])
+
+  doctorId String
+  doctor   Doctor @relation(fields: [doctorId], references: [id])
+
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  clinicId String
+  clinic Clinic @relation(fields: [clinicId], references: [id])
+}
+
+model Transaction {
+  id          String            @id @default(uuid())
+  type        TransactionType
+  description String
+  amount      Decimal           @db.Decimal(10, 2)
+  dueDate     DateTime
+  paidDate    DateTime?
+  status      TransactionStatus @default(pending)
+  category    String
+  reference   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  clinicId String
+  clinic Clinic @relation(fields: [clinicId], references: [id])
+}
+
+model CashMovement {
+  id            String        @id @default(uuid())
+  type          MovementType
+  description   String
+  amount        Decimal       @db.Decimal(10, 2)
+  date          DateTime
+  category      String
+  paymentMethod PaymentMethod
+
+  createdAt DateTime @default(now())
+
+  clinicId String
+  clinic Clinic @relation(fields: [clinicId], references: [id])
+}
+
+model BankAccount {
+  id      String  @id @default(uuid())
+  name    String
+  bank    String
+  agency  String
+  account String
+  balance Decimal @db.Decimal(15, 2)
+
+  movements BankMovement[]
+
+  clinicId String
+  clinic Clinic @relation(fields: [clinicId], references: [id])
+}
+
+model BankMovement {
+  id          String       @id @default(uuid())
+  type        MovementType // credit ou debit
+  description String
+  amount      Decimal      @db.Decimal(10, 2)
+  date        DateTime
+  category    String
+
+  accountId String
+  account   BankAccount @relation(fields: [accountId], references: [id])
+
+  createdAt DateTime @default(now())
+}
