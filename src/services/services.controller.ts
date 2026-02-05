@@ -8,14 +8,16 @@ import {
   Delete,
   UseGuards,
   Request,
+  Query,
 } from '@nestjs/common';
 import { ServicesService } from './services.service';
 import { CreateServiceDto } from './dto/create-service.dto';
 import { UpdateServiceDto } from './dto/update-service.dto';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { Status } from '@prisma/client';
 
 @Controller('services')
-@UseGuards(JwtAuthGuard) // <--- Proteção Global do Módulo
+@UseGuards(JwtAuthGuard)
 export class ServicesController {
   constructor(private readonly servicesService: ServicesService) {}
 
@@ -25,8 +27,8 @@ export class ServicesController {
   }
 
   @Get()
-  findAll(@Request() req) {
-    return this.servicesService.findAll(req.user.clinicId);
+  findAll(@Request() req, @Query('status') status?: Status) {
+    return this.servicesService.findAll(req.user.clinicId, status);
   }
 
   @Get(':id')

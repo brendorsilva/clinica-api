@@ -1,12 +1,18 @@
 import {
+  IsArray,
   IsEmail,
   IsEnum,
   IsNotEmpty,
+  IsOptional,
   IsString,
   MinLength,
 } from 'class-validator';
 
-// Enum deve bater com o do Prisma
+export enum Status {
+  active = 'active',
+  inactive = 'inactive',
+}
+
 export enum UserRole {
   admin = 'admin',
   manager = 'manager',
@@ -29,4 +35,12 @@ export class CreateUserDto {
 
   @IsEnum(UserRole)
   role: UserRole;
+
+  @IsOptional()
+  @IsEnum(Status)
+  status?: Status;
+
+  @IsOptional()
+  @IsArray()
+  permissions?: string[];
 }

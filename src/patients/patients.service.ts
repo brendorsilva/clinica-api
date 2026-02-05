@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { contains } from 'class-validator';
 
 @Injectable()
 export class PatientsService {
@@ -17,12 +18,23 @@ export class PatientsService {
     });
   }
 
-  findAll(clinicId: string) {
+  findAll(clinicId: string, search?: string) {
     return this.prisma.patient.findMany({
-      where: { clinicId },
+      where: {
+        clinicId,
+        ...(search
+          ? {
+              OR: [
+                { name: { contains: search } },
+                { cpf: { contains: search } },
+              ],
+            }
+          : {}),
+      },
       orderBy: {
         createdAt: 'desc',
       },
+      take: 20,
     });
   }
 

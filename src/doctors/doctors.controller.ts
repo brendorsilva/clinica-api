@@ -8,14 +8,16 @@ import {
   Delete,
   UseGuards,
   Request,
+  Query,
 } from '@nestjs/common';
 import { DoctorsService } from './doctors.service';
 import { CreateDoctorDto } from './dto/create-doctor.dto';
 import { UpdateDoctorDto } from './dto/update-doctor.dto';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { Status } from '@prisma/client';
 
 @Controller('doctors')
-@UseGuards(JwtAuthGuard) // <--- Protege TODAS as rotas de médicos
+@UseGuards(JwtAuthGuard)
 export class DoctorsController {
   constructor(private readonly doctorsService: DoctorsService) {}
 
@@ -25,8 +27,8 @@ export class DoctorsController {
   }
 
   @Get()
-  findAll(@Request() req) {
-    return this.doctorsService.findAll(req.user.clinicId);
+  findAll(@Request() req, @Query('status') status?: Status) {
+    return this.doctorsService.findAll(req.user.clinicId, status);
   }
 
   @Get(':id')

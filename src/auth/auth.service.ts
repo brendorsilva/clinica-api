@@ -70,12 +70,17 @@ export class AuthService {
       throw new UnauthorizedException('Credenciais inválidas');
     }
 
+    const permissionsArray = Array.isArray(user.permissions)
+      ? user.permissions
+      : [];
+
     // 2. Gerar Payload do Token
     const payload = {
       sub: user.id,
       email: user.email,
       role: user.role,
       clinicId: user.clinicId,
+      permissions: permissionsArray,
     };
 
     return {
@@ -85,6 +90,7 @@ export class AuthService {
         email: user.email,
         role: user.role,
         clinicId: user.clinicId,
+        permissions: permissionsArray,
       },
     };
   }

@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   Request,
+  Query,
 } from '@nestjs/common';
 import { PatientsService } from './patients.service';
 import { CreatePatientDto } from './dto/create-patient.dto';
@@ -25,8 +26,8 @@ export class PatientsController {
   }
 
   @Get()
-  findAll(@Request() req) {
-    return this.patientsService.findAll(req.user.clinicId);
+  findAll(@Request() req, @Query('search') search?: string) {
+    return this.patientsService.findAll(req.user.clinicId, search);
   }
 
   @Get(':id')

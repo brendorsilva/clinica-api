@@ -2,30 +2,28 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateServiceDto } from './dto/create-service.dto';
 import { UpdateServiceDto } from './dto/update-service.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { Status } from '@prisma/client';
 
 @Injectable()
 export class ServicesService {
   constructor(private prisma: PrismaService) {}
 
-  // Cria vinculando à clínica
   create(createServiceDto: CreateServiceDto, clinicId: string) {
     return this.prisma.service.create({
       data: {
         ...createServiceDto,
-        clinicId, // <--- Vínculo de segurança
+        clinicId,
       },
     });
   }
 
-  // Lista APENAS serviços da clínica do usuário
-  findAll(clinicId: string) {
+  findAll(clinicId: string, status?: Status) {
     return this.prisma.service.findMany({
-      where: { clinicId },
+      where: { clinicId, ...(status ? { status: status as Status } : {}) },
       orderBy: { name: 'asc' },
     });
   }
 
-  // Busca um serviço específico, validando se pertence à clínica
   async findOne(id: string, clinicId: string) {
     const service = await this.prisma.service.findFirst({
       where: { id, clinicId },
@@ -38,13 +36,11 @@ export class ServicesService {
     return service;
   }
 
-  // Atualiza garantindo que é da clínica
   async update(
     id: string,
     updateServiceDto: UpdateServiceDto,
     clinicId: string,
   ) {
-    // Primeiro verificamos se existe/pertence (reutilizando lógica)
     await this.findOne(id, clinicId);
 
     return this.prisma.service.update({
@@ -53,7 +49,6 @@ export class ServicesService {
     });
   }
 
-  // Remove garantindo que é da clínica
   async remove(id: string, clinicId: string) {
     await this.findOne(id, clinicId);
 

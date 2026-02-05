@@ -2,13 +2,13 @@ import { ConflictException, Injectable } from '@nestjs/common';
 import { CreateDoctorDto } from './dto/create-doctor.dto';
 import { UpdateDoctorDto } from './dto/update-doctor.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { Status } from '@prisma/client';
 
 @Injectable()
 export class DoctorsService {
   constructor(private prisma: PrismaService) {}
 
   async create(createDoctorDto: CreateDoctorDto, clinicId: string) {
-    // Verificar se já existe CRM ou Email
     const existingDoctor = await this.prisma.doctor.findFirst({
       where: {
         OR: [{ crm: createDoctorDto.crm }, { email: createDoctorDto.email }],
@@ -26,9 +26,9 @@ export class DoctorsService {
     });
   }
 
-  findAll(clinicId: string) {
+  findAll(clinicId: string, status?: Status) {
     return this.prisma.doctor.findMany({
-      where: { clinicId },
+      where: { clinicId, ...(status ? { status: status as Status } : {}) },
       orderBy: { name: 'asc' },
     });
   }
@@ -47,9 +47,6 @@ export class DoctorsService {
   }
 
   remove(id: string, clinicId: string) {
-    // Soft delete é melhor em sistemas médicos (apenas inativar)
-    // Mas seguindo o padrão REST delete, vamos remover o registro por enquanto.
-    // Se preferir inativar, mude para update({ status: 'inactive' })
     return this.prisma.doctor.delete({
       where: { id, clinicId },
     });
